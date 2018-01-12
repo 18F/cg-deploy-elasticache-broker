@@ -19,12 +19,13 @@ resource_types:
   source:
     repository: 18fgsa/s3-resource
 
-- name: slack
-  type: slack-notification
-  source:
-    url: ((slack-webhook-url))
-
 resources:
+- name: pipeline-tasks
+  type: git
+  source:
+    uri: ((pipeline-tasks-config-uri))
+    branch: ((pipeline-tasks-config-branch))
+
 - name: broker-config
   type: git
   source:
@@ -37,6 +38,11 @@ resources:
     bucket: ((bosh-releases-bucket))
     region_name: ((aws-region))
     regexp: elasticache-broker-(.*).tgz
+
+- name: stemcell
+  type: bosh-io-stemcell
+  source:
+    name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
 
 - name: terraform-yaml-development
   type: s3-iam
@@ -63,13 +69,21 @@ resources:
     ca_cert: ((ca-cert))
     deployment: elasticache-broker
 
+- name: slack
+  type: slack-notification
+  source:
+    url: ((slack-webhook-url))
+
 jobs:
 - name: deploy-development
   plan:
   - aggregate:
+    - get: pipeline-tasks
     - get: broker-config
       trigger: true
     - get: broker-release
+      trigger: true
+    - get: stemcell
       trigger: true
     - get: terraform-yaml
       resource: terraform-yaml-development
@@ -89,21 +103,34 @@ jobs:
       - broker-config/bosh/varsfiles/catalog.yml
       - terraform-secrets/terraform.yml
       - common/secrets.yml
+  - task: update-broker
+    file: pipeline-tasks/register-service-broker.yml
+    params:
+      CF_API_URL: ((cf-api-url-development))
+      CF_USERNAME: ((cf-username-development))
+      CF_PASSWORD: ((cf-password-development))
+      CF_ORGANIZATION: ((cf-organization-development))
+      CF_SPACE: ((cf-space-development))
+      BROKER_NAME: elasticache-broker
+      BROKER_URL: ((broker-url-development))
+      AUTH_USER: ((broker-username-development))
+      AUTH_PASS: ((broker-password-development))
+      SERVICES: redis
   on_success:
     put: slack
     params:
       text: |
         :white_check_mark: Successfully deployed elasticache broker on development
         <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|View build details>
-      channel: {{slack-channel}}
-      username: {{slack-username}}
-      icon_url: {{slack-icon-url}}
+      channel: ((slack-channel))
+      username: ((slack-username))
+      icon_url: ((slack-icon-url))
   on_failure:
     put: slack
     params:
       text: |
         :x: FAILED to deploy elasticache broker on development
         <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|View build details>
-      channel: {{slack-channel}}
-      username: {{slack-username}}
-      icon_url: {{slack-icon-url}}
+      channel: ((slack-channel))
+      username: ((slack-username))
+      icon_url: ((slack-icon-url))
