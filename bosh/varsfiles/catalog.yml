@@ -1,0 +1,35 @@
+catalog:
+  services:
+  - id: 3011ac51-1d6c-4f92-8383-1a3831ff62be
+    name: redis
+    description: AWS ElastiCache Redis service
+    plan_updateable: true
+    bindable: true
+    plans:
+    - id: 1ddd9f9e-a0d2-4b75-a0b1-b8119c64ef36
+      name: micro
+      description: Micro plan
+      free: false
+    - id: 84d656a0-15fc-4cb4-90c3-9ede6851a95d
+      name: micro-ha
+      description: Micro plan with replica
+      free: false
+plan-configs:
+  1ddd9f9e-a0d2-4b75-a0b1-b8119c64ef36:
+    instance_type: cache.t2.micro
+    automatic_failover_enabled: false
+    snapshot_retention_limit: 0
+    replicas_per_node_group: 0
+    shard_count: 1
+    parameters:
+      maxmemory-policy: volatile-lru
+      reserved-memory: '0'
+  84d656a0-15fc-4cb4-90c3-9ede6851a95d:
+    instance_type: cache.t2.micro
+    automatic_failover_enabled: true
+    snapshot_retention_limit: 0
+    replicas_per_node_group: 1
+    shard_count: 1
+    parameters:
+      maxmemory-policy: volatile-lru
+      reserved-memory: '0'

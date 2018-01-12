@@ -1,0 +1,109 @@
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+
+- name: bosh-deployment
+  type: docker-image
+  source:
+    repository: cloudfoundry/bosh-deployment-resource
+
+- name: cg-common
+  type: docker-image
+  source:
+    repository: 18fgsa/cg-common-resource
+
+- name: s3-iam
+  type: docker-image
+  source:
+    repository: 18fgsa/s3-resource
+
+- name: slack
+  type: slack-notification
+  source:
+    url: ((slack-webhook-url))
+
+resources:
+- name: broker-config
+  type: git
+  source:
+    uri: ((broker-config-uri))
+    branch: ((broker-config-branch))
+
+- name: broker-release
+  type: s3-iam
+  source:
+    bucket: ((bosh-releases-bucket))
+    region_name: ((aws-region))
+    regexp: elasticache-broker-(.*).tgz
+
+- name: terraform-yaml-development
+  type: s3-iam
+  source:
+    bucket: ((tf-state-bucket))
+    versioned_file: ((tf-state-file-development))
+    region_name: ((aws-region))
+
+- name: common-development
+  type: cg-common
+  source:
+    bucket_name: ((secrets-bucket-development))
+    secrets_file: elasticache-broker-development.yml
+    secrets_passphrase: ((secrets-passphrase-development))
+    bosh_cert: bosh.pem
+    region: ((aws-region))
+
+- name: development-deployment
+  type: bosh-deployment
+  source:
+    target: ((bosh-target-development))
+    client: ((bosh-client-development))
+    client_secret: ((bosh-client-secret-development))
+    ca_cert: ((ca-cert))
+    deployment: elasticache-broker
+
+jobs:
+- name: deploy-development
+  plan:
+  - aggregate:
+    - get: broker-config
+      trigger: true
+    - get: broker-release
+      trigger: true
+    - get: terraform-yaml
+      resource: terraform-yaml-development
+    - get: common
+      resource: common-development
+      trigger: true
+  - task: terraform-secrets
+    file: broker-config/ci/terraform-secrets.yml
+  - put: development-deployment
+    params:
+      stemcells:
+      - stemcell/*.tgz
+      releases:
+      - broker-release/*.tgz
+      manifest: broker-config/bosh/manifest.yml
+      vars_files:
+      - broker-config/bosh/varsfiles/catalog.yml
+      - terraform-secrets/terraform.yml
+      - common/secrets.yml
+  on_success:
+    put: slack
+    params:
+      text: |
+        :white_check_mark: Successfully deployed elasticache broker on development
+        <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|View build details>
+      channel: {{slack-channel}}
+      username: {{slack-username}}
+      icon_url: {{slack-icon-url}}
+  on_failure:
+    put: slack
+    params:
+      text: |
+        :x: FAILED to deploy elasticache broker on development
+        <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|View build details>
+      channel: {{slack-channel}}
+      username: {{slack-username}}
+      icon_url: {{slack-icon-url}}

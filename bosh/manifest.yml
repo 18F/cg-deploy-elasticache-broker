@@ -1,0 +1,42 @@
+name: elasticache-broker
+
+releases:
+- {name: elasticache-broker, version: latest}
+
+stemcells:
+- alias: default
+  name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+  version: latest
+
+update:
+  canaries: 1
+  max_in_flight: 32
+  canary_watch_time: 1000-600000
+  update_watch_time: 1000-600000
+  serial: false
+
+instance_groups:
+- name: elasticache-broker
+  vm_type: elasticache-broker
+  vm_extensions:
+  - elasticache-broker-lb
+  - elasticache-broker-profile
+  stemcell: default
+  instances: 1
+  azs: [z1]
+  networks:
+  - name: services
+  jobs:
+  - name: elasticache-broker
+    release: elasticache-broker
+    properties:
+      elasticache-broker:
+        broker_name: elasticache-broker
+        broker_username: elasticache-broker
+        broker_password: ((broker-password))
+        auth_token_seed: ((auth-token-seed))
+        cache_subnet_group_name: ((subnet-group-name))
+        vpc_security_group_ids: ((security-group-ids))
+        catalog: ((catalog))
+        plan_configs: ((plan-configs))
+        region: ((region))

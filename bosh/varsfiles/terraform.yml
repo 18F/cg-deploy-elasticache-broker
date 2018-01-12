@@ -1,0 +1,3 @@
+subnet-group-name: ((terraform_outputs.elasticache_subnet_group))
+security-group-ids:
+- ((terraform_outputs.elasticache_redis_security_group))
