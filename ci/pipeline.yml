@@ -134,3 +134,31 @@ jobs:
       channel: ((slack-channel))
       username: ((slack-username))
       icon_url: ((slack-icon-url))
+
+- name: acceptance-tests-development
+  plan:
+  - aggregate:
+    - get: broker-config
+      passed: [deploy-development]
+      trigger: true
+    - get: development-deployment
+      passed: [deploy-development]
+      trigger: true
+  - task: clear-acceptance-space
+    file: broker-config/ci/clear-acceptance-space.yml
+    params:
+      CF_API_URL: ((cf-api-url-development))
+      CF_USERNAME: ((cf-username-development))
+      CF_PASSWORD: ((cf-password-development))
+      CF_ORGANIZATION: ((cf-test-organization-development))
+      CF_SPACE: ((cf-test-space-development))
+  - task: run-acceptance-tests
+    file: broker-config/ci/run-acceptance-tests.yml
+    params:
+      CF_API_URL: ((cf-api-url-development))
+      CF_USERNAME: ((cf-username-development))
+      CF_PASSWORD: ((cf-password-development))
+      CF_ORGANIZATION: ((cf-test-organization-development))
+      CF_SPACE: ((cf-test-space-development))
+      SERVICE_NAME: redis
+      PLAN_NAME: micro
