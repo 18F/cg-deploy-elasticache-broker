@@ -9,11 +9,6 @@ resource_types:
   source:
     repository: cloudfoundry/bosh-deployment-resource
 
-- name: cg-common
-  type: docker-image
-  source:
-    repository: 18fgsa/cg-common-resource
-
 - name: s3-iam
   type: docker-image
   source:
@@ -52,12 +47,10 @@ resources:
     region_name: ((aws-region))
 
 - name: common-development
-  type: cg-common
+  type: s3-iam
   source:
-    bucket_name: ((secrets-bucket-development))
-    secrets_file: elasticache-broker-development.yml
-    secrets_passphrase: ((secrets-passphrase-development))
-    bosh_cert: bosh.pem
+    bucket: ((secrets-bucket-development))
+    versioned_file: elasticache-broker-development-decrypted.yml
     region: ((aws-region))
 
 - name: development-deployment
@@ -87,8 +80,7 @@ jobs:
       trigger: true
     - get: terraform-yaml
       resource: terraform-yaml-development
-    - get: common
-      resource: common-development
+    - get: common-development
       trigger: true
   - task: terraform-secrets
     file: broker-config/ci/terraform-secrets.yml
@@ -102,7 +94,7 @@ jobs:
       vars_files:
       - broker-config/bosh/varsfiles/catalog.yml
       - terraform-secrets/terraform.yml
-      - common/secrets.yml
+      - common-development/elasticache-broker-development-decrypted.yml
   - task: update-broker
     file: pipeline-tasks/register-service-broker.yml
     params:
