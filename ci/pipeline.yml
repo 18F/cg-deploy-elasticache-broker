@@ -49,9 +49,9 @@ resources:
 - name: common-development
   type: s3-iam
   source:
-    bucket: ((secrets-bucket-development))
-    versioned_file: elasticache-broker-development-decrypted.yml
-    region: ((aws-region))
+    bucket: ((secrets-bucket))
+    versioned_file: elasticache-broker-development.yml
+    region_name: ((aws-region))
 
 - name: development-deployment
   type: bosh-deployment
@@ -140,16 +140,16 @@ jobs:
     file: broker-config/ci/clear-acceptance-space.yml
     params:
       CF_API_URL: ((cf-api-url-development))
-      CF_USERNAME: ((cf-username-development))
-      CF_PASSWORD: ((cf-password-development))
+      CF_USERNAME: ((cf-test-username-development))
+      CF_PASSWORD: ((cf-test-password-development))
       CF_ORGANIZATION: ((cf-test-organization-development))
       CF_SPACE: ((cf-test-space-development))
   - task: run-acceptance-tests
     file: broker-config/ci/run-acceptance-tests.yml
     params:
       CF_API_URL: ((cf-api-url-development))
-      CF_USERNAME: ((cf-username-development))
-      CF_PASSWORD: ((cf-password-development))
+      CF_USERNAME: ((cf-test-username-development))
+      CF_PASSWORD: ((cf-test-password-development))
       CF_ORGANIZATION: ((cf-test-organization-development))
       CF_SPACE: ((cf-test-space-development))
       SERVICE_NAME: redis
