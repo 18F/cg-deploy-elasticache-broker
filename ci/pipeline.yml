@@ -94,7 +94,7 @@ jobs:
       vars_files:
       - broker-config/bosh/varsfiles/catalog.yml
       - terraform-secrets/terraform.yml
-      - common-development/elasticache-broker-development-decrypted.yml
+      - common-development/elasticache-broker-development.yml
   - task: update-broker
     file: pipeline-tasks/register-service-broker.yml
     params:
