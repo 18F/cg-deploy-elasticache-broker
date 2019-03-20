@@ -34,10 +34,10 @@ resources:
     region_name: ((aws-region))
     regexp: elasticache-broker-(.*).tgz
 
-- name: stemcell
+- name: stemcell-xenial
   type: bosh-io-stemcell
   source:
-    name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+    name: bosh-aws-xen-hvm-ubuntu-xenial-go_agent
 
 - name: terraform-yaml-development
   type: s3-iam
@@ -76,7 +76,7 @@ jobs:
       trigger: true
     - get: broker-release
       trigger: true
-    - get: stemcell
+    - get: stemcell-xenial
       trigger: true
     - get: terraform-yaml
       resource: terraform-yaml-development
@@ -87,7 +87,7 @@ jobs:
   - put: development-deployment
     params:
       stemcells:
-      - stemcell/*.tgz
+      - stemcell-xenial/*.tgz
       releases:
       - broker-release/*.tgz
       manifest: broker-config/bosh/manifest.yml
