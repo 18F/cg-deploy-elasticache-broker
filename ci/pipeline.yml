@@ -70,7 +70,7 @@ resources:
 jobs:
 - name: deploy-development
   plan:
-  - aggregate:
+  - in_parallel:
     - get: pipeline-tasks
     - get: broker-config
       trigger: true
@@ -129,7 +129,7 @@ jobs:
 
 - name: acceptance-tests-development
   plan:
-  - aggregate:
+  - in_parallel:
     - get: broker-config
       passed: [deploy-development]
       trigger: true
